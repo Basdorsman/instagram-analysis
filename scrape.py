@@ -9,8 +9,9 @@ Created on Fri Apr 15 14:41:09 2022
 
 import instaloader
 from datetime import datetime
-from login import myUsername
+from login import getMyUsername
 import random
+import pandas
 
 def login(L, username, filename='login_session'):
     if not isinstance(L.test_login(),str):
@@ -28,7 +29,7 @@ if not 'L' in locals():
     L = instaloader.Instaloader()
 if not 'posts' in locals():
     username = 'uva_amsterdam'
-    myUsername = myUsername()
+    myUsername = getMyUsername()
     date_earliest = datetime(2020, 9, 1)
     date_latest = datetime(2021, 7, 31)
     posts = get_posts(L, myUsername, username, date_earliest, date_latest)
@@ -37,6 +38,8 @@ if not 'posts' in locals():
 posts_sampled = random.sample(posts, 80)
 
 posts_dict = {}
+
+
 for post in posts_sampled:
     post_dict = {}
     post_dict['is_video'] = post.is_video
@@ -50,4 +53,5 @@ for post in posts_sampled:
     post_dict['date_utc'] = post.date_utc
     post_dict['comments'] = post.comments
     posts_dict[post.mediaid] = post_dict
-    
+
+pandas.DataFrame.from_dict(posts_dict)
