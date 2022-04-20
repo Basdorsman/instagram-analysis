@@ -34,8 +34,8 @@ if not 'posts' in locals():
     date_latest = datetime(2021, 7, 31)
     posts = get_posts(L, myUsername, username, date_earliest, date_latest)
 
-
-posts_sampled = random.sample(posts, 80)
+n = 80
+posts_sampled = random.sample(posts, n)
 
 posts_dict = {}
 
@@ -47,11 +47,12 @@ for post in posts_sampled:
     post_dict['video_duration'] = post.video_duration
     post_dict['video_view_count'] = post.video_view_count
     post_dict['title'] = post.title
-    post_dict['url'] = post.url
+    post_dict['url'] = f'https://www.instagram.com/p/{post.shortcode}/'
     post_dict['mediacount'] = post.mediacount
     post_dict['caption'] = post.caption
     post_dict['date_utc'] = post.date_utc
     post_dict['comments'] = post.comments
     posts_dict[post.mediaid] = post_dict
 
-pandas.DataFrame.from_dict(posts_dict)
+df = pandas.DataFrame.from_dict(posts_dict, orient='index')
+df.to_csv(f'data_for_{username}_posts={n}.csv')
