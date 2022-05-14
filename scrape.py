@@ -10,49 +10,63 @@ Created on Fri Apr 15 14:41:09 2022
 import instaloader
 from datetime import datetime
 from login import getMyUsername
-import random
-import pandas
+import pandas as pd
 
 def login(L, username, filename='login_session'):
     if not isinstance(L.test_login(),str):
         L.load_session_from_file(username, filename=filename)
     return L
 
-def get_posts(L, myUsername, targetUsername, datetimeEarliest, datetimeLatest):
+def get_posts(L, myUsername, targetUsername, datetimeEarliest=False, datetimeLatest=False):
     L=login(L, myUsername)
     profile = instaloader.Profile.from_username(L.context, targetUsername)
     posts = [post for post in profile.get_posts()]
-    posts_interval = [post for post in posts if (post.date_utc>datetimeEarliest and post.date_utc<datetimeLatest)]
-    return posts_interval
+    if datetimeEarliest and datetimeLatest:
+        posts_within_interval = [post for post in posts if (post.date_utc>datetimeEarliest and post.date_utc<datetimeLatest)]
+    elif not datetimeEarliest:
+        posts_within_interval = [post for post in posts if post.date_utc<datetimeLatest]
+    return posts_within_interval
 
-if not 'L' in locals():
-    L = instaloader.Instaloader()
-if not 'posts' in locals():
-    username = 'uva_amsterdam'
+# get brands
+input_data = pd.read_csv('./input_files/green_marketing_brands.csv')
+n_brand = 0
+n_brands = input_data.shape[0]
+for brand in input_data['brand_account_name']:
+    if not 'L' in locals():
+        print('generating new instaloader instance...')
+        L = instaloader.Instaloader()
+
+    # retrieve posts
+    n_brand += 1
+    print(f'retrieving posts from {brand} ({n_brand}/{n_brands})...')
+    
+    username = brand
     myUsername = getMyUsername()
-    date_earliest = datetime(2020, 9, 1)
-    date_latest = datetime(2021, 7, 31)
-    posts = get_posts(L, myUsername, username, date_earliest, date_latest)
+    #date_earliest = datetime(2019, 4, 30)
+    date_latest = datetime(2022, 4, 30)
+    posts = get_posts(L, myUsername, username, datetimeLatest=date_latest)
+    
+    # select subset of posts
+    sample_size = 50
+    posts_sampled = {}
+    for post in posts[0:sample_size+1]:
+        posts_sampled[' '.join(post.caption.split()[0:3])]={'post':post,'number_of_likes':post.likes,'number_of_comments':post.comments,'caption_hashtags':post.caption_hashtags,'date':post.date_utc.strftime("%d/%m/%y"),'caption':post.caption,'caption_length':len(post.caption)}
+    
+    # retrieve comments for each post
+    n_post = 0
+    for post in posts_sampled:
+        n_post += 1
+        print(f'retrieving comments from {brand} ({n_brand}/{n_brands}) from post {n_post}/{len(posts_sampled)}...')
+        posts_sampled[post]['comments'] = []
+        comments = posts_sampled[post]['post'].get_comments()
+        if posts_sampled[post]['number_of_comments']>0:
+            for comment in comments._data['edges']:
+                posts_sampled[post]['comments'].append({'text':comment['node']['text'],'length':len(comment['node']['text'])})
+        else:
+            posts_sampled[post]['comments']='None'
 
-n = 80
-posts_sampled = random.sample(posts, n)
-
-posts_dict = {}
-
-
-for post in posts_sampled:
-    post_dict = {}
-    post_dict['is_video'] = post.is_video
-    post_dict['likes'] = post.likes
-    post_dict['video_duration'] = post.video_duration
-    post_dict['video_view_count'] = post.video_view_count
-    post_dict['title'] = post.title
-    post_dict['url'] = f'https://www.instagram.com/p/{post.shortcode}/'
-    post_dict['mediacount'] = post.mediacount
-    post_dict['caption'] = post.caption
-    post_dict['date_utc'] = post.date_utc
-    post_dict['comments'] = post.comments
-    posts_dict[post.mediaid] = post_dict
-
-df = pandas.DataFrame.from_dict(posts_dict, orient='index')
-df.to_csv(f'data_for_{username}_posts={n}.csv')
+    # save output data
+    file_location = f'output_files/posts_{brand}.csv'
+    print('saving output data in '+file_location)
+    output_data = pd.DataFrame.from_dict(posts_sampled, orient='index')
+    output_data.to_csv(file_location)

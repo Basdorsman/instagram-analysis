@@ -5,7 +5,7 @@ description = ""
 authors = ["Bas Dorsman <superbas1996@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 instaloader = "^4.9"
 pandas = "^1.4.2"
 
