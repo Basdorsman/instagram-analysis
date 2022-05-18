@@ -21,26 +21,30 @@ def login(L, username, filename='login_session'):
 def get_posts(L, myUsername, targetUsername, datetimeEarliest, datetimeLatest):
     L=login(L, myUsername)
     profile = instaloader.Profile.from_username(L.context, targetUsername)
+    print('getting all posts...')
     posts = [post for post in profile.get_posts()]
+    print('selecting posts...')
     posts_interval = [post for post in posts if (post.date_utc>datetimeEarliest and post.date_utc<datetimeLatest)]
     return posts_interval
 
 if not 'L' in locals():
     L = instaloader.Instaloader()
 if not 'posts' in locals():
-    username = 'uva_amsterdam'
+    username = 'nyenrodebu'
     myUsername = getMyUsername()
-    date_earliest = datetime(2020, 9, 1)
-    date_latest = datetime(2021, 7, 31)
+    date_earliest = datetime(2020, 1, 1)
+    date_latest = datetime(2022, 1, 1)
     posts = get_posts(L, myUsername, username, date_earliest, date_latest)
 
-n = 80
+n = 78
 posts_sampled = random.sample(posts, n)
 
 posts_dict = {}
-
+n_post = 0
 
 for post in posts_sampled:
+    n_post += 1
+    print(f'post {n_post}/{n}')
     post_dict = {}
     post_dict['is_video'] = post.is_video
     post_dict['likes'] = post.likes
@@ -55,4 +59,4 @@ for post in posts_sampled:
     posts_dict[post.mediaid] = post_dict
 
 df = pandas.DataFrame.from_dict(posts_dict, orient='index')
-df.to_csv(f'data_for_{username}_posts={n}.csv')
+df.to_csv(f'output_files/username={username}_posts={n}.csv')
