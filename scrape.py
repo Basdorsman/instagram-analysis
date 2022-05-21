@@ -28,7 +28,7 @@ def get_posts(L, myUsername, targetUsername, datetimeEarliest=False, datetimeLat
     return posts_within_interval
 
 # get brands
-input_data = pd.read_csv('./input_files/green_marketing_brands.csv')
+input_data = pd.read_csv('./input_files/green_marketing_brands_v2.csv')
 n_brand = 0
 n_brands = input_data.shape[0]
 for brand in input_data['brand_account_name']:
